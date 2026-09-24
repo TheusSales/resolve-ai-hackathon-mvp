@@ -1,0 +1,24 @@
+# Blueprint do Render: descreve a aplicação (Docker) e o banco Postgres.
+# Basta conectar esse repositório em dashboard.render.com/blueprints que o
+# Render cria os dois recursos e já liga um no outro (variável DATABASE_URL).
+services:
+  - type: web
+    name: resolveai
+    runtime: docker
+    plan: free
+    dockerfilePath: ./Dockerfile
+    dockerContext: .
+    envVars:
+      - key: DATABASE_URL
+        fromDatabase:
+          name: resolveai-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      - key: PORT
+        value: 3000
+
+databases:
+  - name: resolveai-db
+    plan: free
+    postgresMajorVersion: "16"

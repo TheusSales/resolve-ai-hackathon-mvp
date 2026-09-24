@@ -25,6 +25,7 @@ COPY backend/package*.json ./
 RUN npm install --omit=dev
 
 COPY --from=backend-build /app/backend/dist ./dist
+COPY --from=backend-build /app/backend/sql ./sql
 COPY --from=frontend-build /app/frontend/dist ./public
 
 ENV NODE_ENV=production

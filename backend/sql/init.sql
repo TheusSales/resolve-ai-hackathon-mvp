@@ -1,6 +1,9 @@
--- Script de criação do banco de dados da plataforma Resolve Aí
+-- Script de criação do banco de dados da plataforma Resolve Aí.
+-- Usa "IF NOT EXISTS"/"ON CONFLICT" porque o backend roda esse script sozinho
+-- toda vez que sobe (veja src/migrate.ts) — assim não precisa rodar nada
+-- manualmente antes do primeiro deploy.
 
-CREATE TABLE usuarios (
+CREATE TABLE IF NOT EXISTS usuarios (
   id SERIAL PRIMARY KEY,
   nome VARCHAR(120) NOT NULL,
   email VARCHAR(160) UNIQUE NOT NULL,
@@ -9,7 +12,7 @@ CREATE TABLE usuarios (
   criado_em TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
-CREATE TABLE ocorrencias (
+CREATE TABLE IF NOT EXISTS ocorrencias (
   id SERIAL PRIMARY KEY,
   titulo VARCHAR(150) NOT NULL,
   descricao TEXT NOT NULL,
@@ -29,7 +32,7 @@ CREATE TABLE ocorrencias (
   atualizado_em TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
-CREATE TABLE comentarios (
+CREATE TABLE IF NOT EXISTS comentarios (
   id SERIAL PRIMARY KEY,
   ocorrencia_id INTEGER NOT NULL REFERENCES ocorrencias(id) ON DELETE CASCADE,
   usuario_id INTEGER NOT NULL REFERENCES usuarios(id),
@@ -37,7 +40,7 @@ CREATE TABLE comentarios (
   criado_em TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
-CREATE TABLE historico_status (
+CREATE TABLE IF NOT EXISTS historico_status (
   id SERIAL PRIMARY KEY,
   ocorrencia_id INTEGER NOT NULL REFERENCES ocorrencias(id) ON DELETE CASCADE,
   status_anterior VARCHAR(20),
@@ -47,9 +50,9 @@ CREATE TABLE historico_status (
   criado_em TIMESTAMP NOT NULL DEFAULT NOW()
 );
 
-CREATE INDEX idx_ocorrencias_solicitante ON ocorrencias(solicitante_id);
-CREATE INDEX idx_comentarios_ocorrencia ON comentarios(ocorrencia_id);
-CREATE INDEX idx_historico_ocorrencia ON historico_status(ocorrencia_id);
+CREATE INDEX IF NOT EXISTS idx_ocorrencias_solicitante ON ocorrencias(solicitante_id);
+CREATE INDEX IF NOT EXISTS idx_comentarios_ocorrencia ON comentarios(ocorrencia_id);
+CREATE INDEX IF NOT EXISTS idx_historico_ocorrencia ON historico_status(ocorrencia_id);
 
 -- Usuário gestor padrão para testar o sistema.
 -- Email: gestor@resolveai.com | Senha: 123456
@@ -59,4 +62,5 @@ VALUES (
   'gestor@resolveai.com',
   '$2a$10$/iVxiqTRitfekI373yegm.R5x0EU2adtyVMWQHX8MwPjjPEFQxap.',
   'gestor'
-);
+)
+ON CONFLICT (email) DO NOTHING;

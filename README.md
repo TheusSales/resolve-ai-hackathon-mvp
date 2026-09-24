@@ -31,8 +31,8 @@ Mais detalhes de arquitetura e os diagramas estão em [`docs/arquitetura.md`](do
 - **Banco de dados**: PostgreSQL.
 - **Testes**: Vitest + Supertest (backend).
 - **Docker**: uma imagem só, com o Express servindo a API e o build do React.
-- **Deploy**: Azure (Container Registry + App Service + Database for
-  PostgreSQL).
+- **Deploy**: [Render](https://render.com) (Web Service via Docker + Postgres
+  gerenciado), usando um Blueprint (`render.yaml`).
 
 ## Rodando localmente com Docker (mais fácil)
 
@@ -42,8 +42,10 @@ Pré-requisito: Docker e Docker Compose instalados.
 docker compose up --build
 ```
 
-Isso sobe o Postgres (já criando as tabelas a partir de `backend/sql/init.sql`)
-e a aplicação em `http://localhost:3000`.
+Isso sobe o Postgres e a aplicação em `http://localhost:3000`. Na primeira
+vez que o backend inicia, ele mesmo cria as tabelas (a partir de
+`backend/sql/init.sql`, ver `backend/src/migrate.ts`) — não precisa rodar
+nada manualmente.
 
 Usuário gestor já cadastrado para testar:
 
@@ -106,61 +108,38 @@ Todas as rotas (exceto login/cadastro) exigem o header
 ocorrência enquanto ela ainda está `aberta`; qualquer outra transição é
 exclusiva do gestor.
 
-## Deploy na Azure
+## Deploy
 
-Passo a passo usando o Azure CLI (`az`). Ajuste os nomes conforme sua
-assinatura.
+O enunciado do hackathon pede só "deploy em cloud", sem exigir um provedor
+específico. A ideia inicial era usar a Azure (foi o que vimos nas matérias da
+pós), mas o cadastro de assinatura deu bastante trabalho: a conta usada não
+era elegível pro crédito gratuito, e o login por linha de comando esbarrou
+numa política de segurança do tenant (bloqueio do fluxo de device code). Como
+o objetivo aqui é ter algo simples e funcionando, optamos por trocar para o
+**[Render](https://render.com)**, que também tem plano gratuito, não pede
+cartão de crédito e o deploy é bem mais direto.
 
-```bash
-# 1. login e resource group
-az login
-az group create --name rg-resolveai --location brazilsouth
+### Deploy no Render
 
-# 2. Azure Container Registry + build da imagem
-az acr create --resource-group rg-resolveai --name acrresolveai --sku Basic
-az acr build --registry acrresolveai --image resolveai:latest .
+O repositório já tem um Blueprint (`render.yaml`) descrevendo os dois
+recursos necessários: o Web Service (que builda a partir do `Dockerfile`) e
+o banco Postgres, já ligados um no outro pela variável `DATABASE_URL`.
 
-# 3. Azure Database for PostgreSQL Flexible Server
-az postgres flexible-server create \
-  --resource-group rg-resolveai \
-  --name pg-resolveai \
-  --admin-user resolveai \
-  --admin-password "SuaSenhaForte123!" \
-  --sku-name Standard_B1ms \
-  --tier Burstable \
-  --version 16 \
-  --public-access 0.0.0.0-255.255.255.255
+1. Instale o [Render CLI](https://render.com/docs/cli) (opcional, só pra
+   acompanhar deploys/logs pelo terminal depois) e rode `render login`.
+2. No painel do Render (**dashboard.render.com → New → Blueprint**), conecte
+   este repositório do GitHub. Esse passo de autorizar o GitHub só dá pra
+   fazer pela interface web mesmo (é assim em qualquer provedor).
+3. O Render lê o `render.yaml`, mostra o plano (1 Web Service + 1 Postgres,
+   ambos no plano free) e é só clicar em **Apply**.
+4. Aguarde o build da imagem Docker. Na primeira inicialização o próprio
+   backend cria as tabelas no banco (`backend/src/migrate.ts`) — não precisa
+   rodar nenhum script manualmente.
+5. Pronto: a aplicação fica disponível na URL que o Render gera (algo como
+   `https://resolveai.onrender.com`).
 
-az postgres flexible-server db create \
-  --resource-group rg-resolveai \
-  --server-name pg-resolveai \
-  --database-name resolveai
-
-# roda o script de criação das tabelas
-psql "host=pg-resolveai.postgres.database.azure.com port=5432 dbname=resolveai user=resolveai password=SuaSenhaForte123! sslmode=require" \
-  -f backend/sql/init.sql
-
-# 4. App Service (Web App for Containers) usando a imagem do ACR
-az appservice plan create --resource-group rg-resolveai --name plan-resolveai --is-linux --sku B1
-
-az webapp create \
-  --resource-group rg-resolveai \
-  --plan plan-resolveai \
-  --name resolveai-app \
-  --deployment-container-image-name acrresolveai.azurecr.io/resolveai:latest
-
-az webapp config appsettings set \
-  --resource-group rg-resolveai \
-  --name resolveai-app \
-  --settings \
-    DATABASE_URL="postgres://resolveai:SuaSenhaForte123!@pg-resolveai.postgres.database.azure.com:5432/resolveai?sslmode=require" \
-    JWT_SECRET="troque-por-uma-chave-bem-grande-e-aleatoria" \
-    WEBSITES_PORT=3000
-```
-
-Depois disso, a aplicação fica disponível em
-`https://resolveai-app.azurewebsites.net`. O `db.ts` do backend já liga o SSL
-automaticamente quando detecta `sslmode=require` na `DATABASE_URL`.
+Depois de criado, dá pra acompanhar tudo pelo CLI: `render services`,
+`render logs`, `render deploys list`, etc.
 
 Há também um workflow simples em `.github/workflows/ci.yml` que roda os
 testes do backend e o build do frontend a cada push/PR.

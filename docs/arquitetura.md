@@ -7,12 +7,13 @@ Esse documento mostra, de forma simples, como as peças do sistema se conectam.
 Uma aplicação Full Stack clássica: um frontend em React que conversa com uma
 API em Node/Express, que por sua vez lê e escreve num banco Postgres. Tudo
 roda dentro de um único container (o Express também serve os arquivos
-estáticos do React em produção).
+estáticos do React em produção). Em produção, esse container e o banco ficam
+hospedados no Render (ver [`README.md`](../README.md#deploy)).
 
 ```mermaid
 flowchart LR
-    U[Usuário<br/>navegador] -->|HTTPS| APP[App Service<br/>Node + Express<br/>serve API e o React]
-    APP -->|SQL| DB[(Azure Database<br/>for PostgreSQL)]
+    U[Usuário<br/>navegador] -->|HTTPS| APP[Web Service<br/>Node + Express<br/>serve API e o React]
+    APP -->|SQL| DB[(Postgres<br/>gerenciado)]
 ```
 
 ## Modelo de dados (ER simplificado)
