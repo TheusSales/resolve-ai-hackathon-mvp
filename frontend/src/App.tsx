@@ -40,6 +40,14 @@ function PaginaInicial() {
   return <Navigate to="/ocorrencias" replace />;
 }
 
+// A lista de ocorrências muda conforme o perfil. Importante checar o perfil
+// AQUI DENTRO (e não direto no App), senão a checagem roda só uma vez, no
+// primeiro carregamento da página (antes do login) e nunca mais se atualiza.
+function ListaOcorrencias() {
+  const usuario = getUsuario();
+  return usuario?.perfil === "gestor" ? <TodasOcorrencias /> : <MinhasOcorrencias />;
+}
+
 export default function App() {
   return (
     <Router>
@@ -54,11 +62,7 @@ export default function App() {
             path="/ocorrencias"
             element={
               <RotaProtegida>
-                {getUsuario()?.perfil === "gestor" ? (
-                  <TodasOcorrencias />
-                ) : (
-                  <MinhasOcorrencias />
-                )}
+                <ListaOcorrencias />
               </RotaProtegida>
             }
           />
