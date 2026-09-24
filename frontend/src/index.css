@@ -221,6 +221,7 @@ button.perigo {
 }
 
 .imagem-ocorrencia {
+  display: block;
   max-width: 100%;
   max-height: 300px;
   border-radius: 6px;
