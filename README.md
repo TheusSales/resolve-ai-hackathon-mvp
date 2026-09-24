@@ -52,6 +52,10 @@ Usuário gestor já cadastrado para testar:
 - **email:** `gestor@resolveai.com`
 - **senha:** `123456`
 
+Esse login também aparece direto na própria tela de login do sistema
+(`frontend/src/pages/Login.tsx`), como uma dica na tela — não precisa
+procurar aqui no README pra testar.
+
 Para criar um solicitante, basta usar a tela de cadastro.
 
 ## Rodando em modo desenvolvimento (sem Docker)
