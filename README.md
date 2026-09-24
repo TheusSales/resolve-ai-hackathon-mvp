@@ -135,11 +135,16 @@ o banco Postgres, já ligados um no outro pela variável `DATABASE_URL`.
 4. Aguarde o build da imagem Docker. Na primeira inicialização o próprio
    backend cria as tabelas no banco (`backend/src/migrate.ts`) — não precisa
    rodar nenhum script manualmente.
-5. Pronto: a aplicação fica disponível na URL que o Render gera (algo como
-   `https://resolveai.onrender.com`).
+5. Pronto: a aplicação fica disponível na URL que o Render gera.
 
 Depois de criado, dá pra acompanhar tudo pelo CLI: `render services`,
 `render logs`, `render deploys list`, etc.
+
+**Aplicação em produção:** https://resolveai-7nms.onrender.com
+
+> O plano free do Render hiberna o serviço depois de ~15 min sem tráfego —
+> a primeira requisição depois disso demora um pouco (30-60s) pra "acordar".
+> O banco gratuito também expira 30 dias após a criação.
 
 Há também um workflow simples em `.github/workflows/ci.yml` que roda os
 testes do backend e o build do frontend a cada push/PR.
